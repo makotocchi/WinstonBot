@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using SpeedrunDotComAPI.Categories;
 
 namespace WinstonBot;
 
@@ -32,7 +33,16 @@ public class Worker : BackgroundService
                     var tankControlSchemeValue = controlSchemeVariable.Values.Values.FirstOrDefault(x => x.Value.Label == "Tank");
                 }
 
-                // var result = await _client.Runs.GetSingleRun("yvldjd6z");
+                var result = await _client.Runs.GetSingleRun("yvldjd6z");
+                
+                // Change run to tank-only:
+                // var category = ((CategoryModel)result.Category).Type = "<TANK ID>";
+                // result.Category = category;
+
+                // Post run to tank-only:
+                var run = result.ToRun();
+                // await _client.Runs.PostRun(run);
+
                 onlyOnce++;
             }
 
