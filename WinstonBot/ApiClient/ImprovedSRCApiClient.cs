@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using SpeedrunDotComAPI.Utility;
 
-namespace WinstonBot;
+namespace WinstonBot.ApiClient;
 
 public class ImprovedSRCApiClient : SRCApiClient
 {
@@ -18,7 +18,7 @@ public class ImprovedSRCApiClient : SRCApiClient
 
     public ImprovedSRCApiClient(string? apiKey = null) : base(apiKey)
     {
-        var httpClient = (typeof(RunApiClient).GetField("_http", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(Runs)) as HttpClient
+        var httpClient = (typeof(RunApiClient).GetField("_http", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(base.Runs)) as HttpClient
             ?? throw new InvalidOperationException("Failed to get the HttpClient from the RunApiClient.");
         Runs = new ImprovedRunApiClient(httpClient);
     }

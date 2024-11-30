@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using SpeedrunDotComAPI.Links;
 
-namespace WinstonBot
+namespace WinstonBot.Models
 {
     public class RunErrorModel
     {

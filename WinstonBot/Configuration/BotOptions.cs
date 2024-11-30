@@ -1,4 +1,6 @@
-﻿namespace WinstonBot;
+﻿using WinstonBot.Models;
+
+namespace WinstonBot.Configuration;
 
 public class BotOptions
 {

@@ -1,4 +1,4 @@
-﻿namespace WinstonBot;
+﻿namespace WinstonBot.Configuration;
 
 // Taken from https://dusted.codes/dotenv-in-dotnet
 public static class DotEnv

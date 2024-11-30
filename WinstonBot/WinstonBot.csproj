@@ -7,7 +7,6 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <UserSecretsId>dotnet-WinstonBot-04b39b4e-7893-428b-8044-adbde1c097cc</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <PublishAot>true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>

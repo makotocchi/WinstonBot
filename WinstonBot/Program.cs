@@ -1,4 +1,6 @@
 using WinstonBot;
+using WinstonBot.ApiClient;
+using WinstonBot.Configuration;
 
 var root = Directory.GetCurrentDirectory();
 var dotenv = Path.Combine(root, ".env");
