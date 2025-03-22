@@ -3,6 +3,7 @@ using SpeedrunDotComAPI.Runs;
 using System.Reflection;
 using System.Text.Json;
 using SpeedrunDotComAPI.Utility;
+using System.Text.Json.Serialization;
 
 namespace WinstonBot.ApiClient;
 
@@ -14,6 +15,7 @@ public class ImprovedSRCApiClient : SRCApiClient
     internal static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = new KebabCaseNamingPolicy(),
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     public ImprovedSRCApiClient(string? apiKey = null) : base(apiKey)

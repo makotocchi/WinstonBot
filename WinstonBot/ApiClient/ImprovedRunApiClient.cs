@@ -25,26 +25,27 @@ public class ImprovedRunApiClient(HttpClient http) : RunApiClient(http)
         {
             return Result.Fail(new ExceptionalError("Request failed", e));
         }
-        return Result.Ok(new RunModel());
-        //var responseMessage = await _http.PostAsync(RunEndpointUri, httpContent);
-        //try
-        //{
-        //    // Response contains a "Location" header for the new run, but should be also available through RunModel.Weblink,
-        //    // so it can be accessed programmatically by caller without needing a custom response type to capture Location.
-        //    var runModel = await JsonSerializer.DeserializeAsync<RunModel>(await responseMessage.Content.ReadAsStreamAsync());
-        //    return Result.Ok(runModel);
-        //}
-        //catch (Exception outerException)
-        //{
-        //    try
-        //    {
-        //        var errorModel = await JsonSerializer.DeserializeAsync<RunErrorModel>(await responseMessage.Content.ReadAsStreamAsync());
-        //        return new Error($"{errorModel!.Message} | Errors: {string.Join(", ", errorModel.Errors)}");
-        //    }
-        //    catch (Exception _)
-        //    {
-        //        return Result.Fail(new ExceptionalError("Response deserialization failed", outerException));
-        //    }
-        //}
+
+        var responseMessage = await _http.PostAsync(AllRunsEndpointUri, httpContent);
+
+        try
+        {
+            // Response contains a "Location" header for the new run, but should be also available through RunModel.Weblink,
+            // so it can be accessed programmatically by caller without needing a custom response type to capture Location.
+            var runModel = await JsonSerializer.DeserializeAsync<RunModel>(await responseMessage.Content.ReadAsStreamAsync());
+            return Result.Ok(runModel);
+        }
+        catch (Exception outerException)
+        {
+            try
+            {
+                var errorModel = await JsonSerializer.DeserializeAsync<RunErrorModel>(await responseMessage.Content.ReadAsStreamAsync());
+                return new Error($"{errorModel!.Message} | Errors: {string.Join(", ", errorModel.Errors)}");
+            }
+            catch (Exception _)
+            {
+                return Result.Fail(new ExceptionalError("Response deserialization failed", outerException));
+            }
+        }
     }
 }

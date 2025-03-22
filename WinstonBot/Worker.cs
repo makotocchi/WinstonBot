@@ -23,7 +23,7 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var controlSchemeVariables = new Dictionary<Game, (string VariableId, string TankValueId)>();
-        var controlSchemeCategories = new Dictionary<Game, (string CategoryId, string TankValueId)>();
+        var controlSchemeSubcategories = new Dictionary<Game, (string SubcategoryId, string AllValueId, string TankValueId)>();
         var onlyOnce = 0;
 
         while (!stoppingToken.IsCancellationRequested)
@@ -34,13 +34,17 @@ public class Worker : BackgroundService
                 {
                     var gameVariables = await _client.Games.GetSingleGameVariables(game.Id);
 
-                    var controlSchemeVariable = gameVariables.FirstOrDefault(x => x.Name == "Control Scheme");
+                    var controlSchemeVariable = gameVariables.FirstOrDefault(x => x.Name == "Control Scheme" && !x.IsSubcategory);
 
                     var tankControlSchemeValue = controlSchemeVariable.Values.Values.FirstOrDefault(x => x.Value.Label == "Tank");
 
                     controlSchemeVariables.Add(game, (controlSchemeVariable.Id, tankControlSchemeValue.Key));
 
-                    // TODO: need to create the new category and fill the dictionary controlSchemeCategories
+                    var controlSchemeSubcategory = gameVariables.FirstOrDefault(x => x.Name == "Control Scheme" && x.IsSubcategory);
+                    var allControlSchemeSubcategoryValue = controlSchemeSubcategory.Values.Values.FirstOrDefault(x => x.Value.Label == "All");
+                    var tankOnlySchemeSubcategoryValue = controlSchemeSubcategory.Values.Values.FirstOrDefault(x => x.Value.Label == "Tank-Only");
+
+                    controlSchemeSubcategories.Add(game, (controlSchemeSubcategory.Id, allControlSchemeSubcategoryValue.Key, tankOnlySchemeSubcategoryValue.Key));
                 }
 
                 onlyOnce++;
@@ -49,28 +53,59 @@ public class Worker : BackgroundService
             foreach (var game in _options.Games)
             {
                 var controlSchemeVariable = controlSchemeVariables[game];
+                var controlSchemeSubcategory = controlSchemeSubcategories[game];
                 var verifiedRuns = await FetchRuns(game);
-                var tankRuns = verifiedRuns.Where(x => x.HasVariable(controlSchemeVariable.VariableId, controlSchemeVariable.TankValueId)).ToList();
+                var tankRuns = verifiedRuns.Where(x => x.HasVariable(controlSchemeVariable.VariableId, controlSchemeVariable.TankValueId) &&
+                    x.HasVariable(controlSchemeSubcategory.SubcategoryId, controlSchemeSubcategory.AllValueId)).ToList();
 
-                var controlSchemeCategory = controlSchemeCategories[game];
+                var runsAlreadySubmitted = verifiedRuns
+                    .Where(x => x.HasVariable(controlSchemeSubcategory.SubcategoryId, controlSchemeSubcategory.TankValueId))
+                    .Select(x => x.Comment)
+                    .Where(x =>
+                    x is not null &&
+                    x.Contains("Automatically submitted by TombRunnerBot. Original submission: ")).ToHashSet();
+
+                if (tankRuns.Count == runsAlreadySubmitted.Count)
+                {
+                    continue;
+                }
 
                 foreach (var run in tankRuns)
                 {
+                    var comment = $"Automatically submitted by TombRunnerBot. Original submission: {run.Weblink}";
+
+                    if (runsAlreadySubmitted.Contains(comment))
+                    {
+                        continue;
+                    }
+
                     var runCopy = run.ToRun();
 
-                    runCopy.Variables[controlSchemeCategory.CategoryId] = new Variable
+                    if (!runCopy.Variables.ContainsKey(controlSchemeSubcategory.SubcategoryId))
+                    {
+                        continue;
+                    }
+
+                    var currentSubcategory = runCopy.Variables[controlSchemeSubcategory.SubcategoryId].Value;
+
+                    runCopy.Variables[controlSchemeSubcategory.SubcategoryId] = new Variable
                     {
                         Type = VariableType.Predefined,
-                        Value = controlSchemeCategory.TankValueId
+                        Value = currentSubcategory == controlSchemeSubcategory.AllValueId ? controlSchemeSubcategory.TankValueId : controlSchemeSubcategory.AllValueId
                     };
 
-                    // runCopy.Verified = null;
+                    runCopy.Verified = true;
+                    runCopy.Comment = comment;
 
-                    // await _client.Runs.PostRun(runCopy);
+                    await _client.Runs.PostRun(runCopy);
+
+                    runsAlreadySubmitted.Add(comment);
+
+                    await Task.Delay(1000, stoppingToken);
                 }
             }
 
-            await Task.Delay(1000, stoppingToken);
+            await Task.Delay(60000, stoppingToken);
         }
     }
 
@@ -103,4 +138,5 @@ public class Worker : BackgroundService
 
         return allRuns.Where(x => x.Status.Status == RunStatus.Verified).ToList();
     }
+
 }

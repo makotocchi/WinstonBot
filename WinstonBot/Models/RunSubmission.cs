@@ -28,13 +28,13 @@ public class Run
 public class Times
 {
     [JsonPropertyName("realtime")]
-    public float RealTime { get; set; }
+    public float? RealTime { get; set; }
 
     [JsonPropertyName("realtime_noloads")]
-    public float RealTimeNoLoads { get; set; }
+    public float? RealTimeNoLoads { get; set; }
 
     [JsonPropertyName("ingame")]
-    public float InGame { get; set; }
+    public float? InGame { get; set; }
 }
 
 public class Player
@@ -58,14 +58,21 @@ public enum VariableType
     UserDefined
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(JsonStringEnumMemberConverter))]
 public enum UserRole
 {
+    [EnumMember(Value = "guest")]
     Guest,
+    [EnumMember(Value = "banned")]
     Banned,
+    [EnumMember(Value = "user")]
     User,
+    [EnumMember(Value = "trusted")]
     Trusted,
+    [EnumMember(Value = "moderator")]
     Moderator,
+    [EnumMember(Value = "admin")]
     Admin,
+    [EnumMember(Value = "programmer")]
     Programmer
 }

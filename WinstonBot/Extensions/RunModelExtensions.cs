@@ -15,6 +15,8 @@ public static class RunModelExtensions
 
     public static Run ToRun(this RunModel run)
     {
+        const string pcPlatform = "8gej2n93";
+
         if (run.Category is not string category)
             throw new ArgumentException("Required submission object Category missing", nameof(run));
 
@@ -22,7 +24,9 @@ public static class RunModelExtensions
         var players = GetPlayers(run);
         var video = GetVideo(run);
         var variables = GetVariables(run);
-        var times = new Times { InGame = run.Times.IngameTime, RealTime = run.Times.RealTimeTime, RealTimeNoLoads = run.Times.RealtimeNoloadsTime };
+        var times = run.System.Platform == pcPlatform ?
+            new Times { InGame = run.Times.IngameTime, RealTimeNoLoads = run.Times.RealTimeTime } :
+            new Times { InGame = run.Times.IngameTime, RealTime = run.Times.RealTimeTime };
 
         return new Run
         {
