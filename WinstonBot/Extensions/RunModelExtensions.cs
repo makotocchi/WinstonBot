@@ -90,5 +90,6 @@ public static class RunModelExtensions
     private static Dictionary<string, Variable> GetVariables(RunModel run) =>
         run.Values
            .Select(entry => new KeyValuePair<string, Variable>(entry.Key, new Variable { Type = VariableType.Predefined, Value = entry.Value }))
+           .Where(x => x.Key != "38dexkzn") // old "Glitched" variable for TR123R
            .ToDictionary();
 }

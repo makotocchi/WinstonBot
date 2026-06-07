@@ -32,6 +32,8 @@ public class Worker : BackgroundService
             {
                 foreach (var game in _options.Games)
                 {
+                    _logger.LogInformation("Setting up game {title} ({id}).", game.Title, game.Id);
+
                     var gameVariables = await _client.Games.GetSingleGameVariables(game.Id);
 
                     var controlSchemeVariable = gameVariables.FirstOrDefault(x => x.Name == "Control Scheme" && !x.IsSubcategory);
@@ -45,6 +47,8 @@ public class Worker : BackgroundService
                     var tankOnlySchemeSubcategoryValue = controlSchemeSubcategory.Values.Values.FirstOrDefault(x => x.Value.Label == "Tank-Only");
 
                     controlSchemeSubcategories.Add(game, (controlSchemeSubcategory.Id, allControlSchemeSubcategoryValue.Key, tankOnlySchemeSubcategoryValue.Key));
+
+                    await Task.Delay(30000, stoppingToken);
                 }
 
                 onlyOnce++;
@@ -52,6 +56,8 @@ public class Worker : BackgroundService
 
             foreach (var game in _options.Games)
             {
+                _logger.LogInformation("Starting iteration for game {title} ({id}).", game.Title, game.Id);
+
                 var controlSchemeVariable = controlSchemeVariables[game];
                 var controlSchemeSubcategory = controlSchemeSubcategories[game];
                 var verifiedRuns = await FetchRuns(game);
@@ -63,21 +69,34 @@ public class Worker : BackgroundService
                     .Select(x => x.Comment)
                     .Where(x =>
                     x is not null &&
-                    x.Contains("Automatically submitted by TombRunnerBot. Original submission: ")).ToHashSet();
+                    x.Contains("Automatically submitted by TombRunnerBot. Original submission: "))
+                    .Select(x => x!.Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Last())
+                    .ToHashSet();
 
-                if (tankRuns.Count == runsAlreadySubmitted.Count)
+                var tankRunIds = tankRuns.Select(run => run.Id).ToHashSet();
+
+                var deletedRuns = runsAlreadySubmitted.Except(tankRunIds);
+
+                foreach (var deletedRun in deletedRuns)
                 {
+                    var id = verifiedRuns.FirstOrDefault(x => x.Comment is not null && x.Comment.Contains(deletedRun)).Id;
+                    _logger.LogWarning("Run exists in the tank-only boards, but not in the main boards: {url}", $"{game.Url}/runs/{id}");
+                }
+                
+                if (tankRuns.Count <= runsAlreadySubmitted.Count)
+                {
+                    _logger.LogInformation("All tank runs already submitted.");
                     continue;
                 }
 
                 foreach (var run in tankRuns)
                 {
-                    var comment = $"Automatically submitted by TombRunnerBot. Original submission: {run.Weblink}";
-
-                    if (runsAlreadySubmitted.Contains(comment))
+                    if (runsAlreadySubmitted.Contains(run.Id))
                     {
                         continue;
                     }
+
+                    _logger.LogInformation("Submitting run {id}", run.Id);
 
                     var runCopy = run.ToRun();
 
@@ -95,17 +114,20 @@ public class Worker : BackgroundService
                     };
 
                     runCopy.Verified = true;
+
+                    var comment = $"Automatically submitted by TombRunnerBot. Original submission: {run.Weblink}";
+
                     runCopy.Comment = comment;
 
                     await _client.Runs.PostRun(runCopy);
 
-                    runsAlreadySubmitted.Add(comment);
+                    runsAlreadySubmitted.Add(run.Id);
 
                     await Task.Delay(1000, stoppingToken);
                 }
             }
 
-            await Task.Delay(60000, stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
         }
     }
 

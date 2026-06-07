@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using WinstonBot;
 using WinstonBot.ApiClient;
 using WinstonBot.Configuration;
@@ -16,7 +17,7 @@ if (string.IsNullOrWhiteSpace(apiKey))
 }
 
 builder.Services.AddHostedService<Worker>();
-builder.Services.AddSingleton(new ImprovedSRCApiClient(apiKey));
+builder.Services.AddSingleton(serviceProvider => new ImprovedSRCApiClient(apiKey, serviceProvider.GetService<ILogger<ImprovedRunApiClient>>()));
 builder.Services.Configure<BotOptions>(builder.Configuration.GetSection(nameof(BotOptions)));
 
 var host = builder.Build();

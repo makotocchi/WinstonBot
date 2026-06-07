@@ -18,10 +18,10 @@ public class ImprovedSRCApiClient : SRCApiClient
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public ImprovedSRCApiClient(string? apiKey = null) : base(apiKey)
+    public ImprovedSRCApiClient(string? apiKey = null, ILogger<ImprovedRunApiClient>? logger = null) : base(apiKey)
     {
         var httpClient = (typeof(RunApiClient).GetField("_http", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(base.Runs)) as HttpClient
             ?? throw new InvalidOperationException("Failed to get the HttpClient from the RunApiClient.");
-        Runs = new ImprovedRunApiClient(httpClient);
+        Runs = new ImprovedRunApiClient(httpClient, logger);
     }
 }

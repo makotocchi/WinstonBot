@@ -6,10 +6,11 @@ using WinstonBot.Models;
 
 namespace WinstonBot.ApiClient;
 
-public class ImprovedRunApiClient(HttpClient http) : RunApiClient(http)
+public class ImprovedRunApiClient(HttpClient http, ILogger<ImprovedRunApiClient>? logger) : RunApiClient(http)
 {
     // Inaccessible in base class, re-implemented here.
     private readonly HttpClient _http = http;
+    private readonly ILogger<ImprovedRunApiClient>? _logger = logger;
 
     public async Task<Result<RunModel>> PostRun(Run run)
     {
@@ -27,6 +28,11 @@ public class ImprovedRunApiClient(HttpClient http) : RunApiClient(http)
         }
 
         var responseMessage = await _http.PostAsync(AllRunsEndpointUri, httpContent);
+
+        if (!responseMessage.IsSuccessStatusCode)
+        {
+            _logger?.LogError("Failed to submit (code {code}): {reason}", responseMessage.StatusCode, responseMessage.ReasonPhrase);
+        }
 
         try
         {
