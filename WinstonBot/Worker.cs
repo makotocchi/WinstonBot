@@ -47,8 +47,6 @@ public class Worker : BackgroundService
                     var tankOnlySchemeSubcategoryValue = controlSchemeSubcategory.Values.Values.FirstOrDefault(x => x.Value.Label == "Tank-Only");
 
                     controlSchemeSubcategories.Add(game, (controlSchemeSubcategory.Id, allControlSchemeSubcategoryValue.Key, tankOnlySchemeSubcategoryValue.Key));
-
-                    await Task.Delay(30000, stoppingToken);
                 }
 
                 onlyOnce++;
